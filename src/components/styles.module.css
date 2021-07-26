@@ -1,0 +1,26 @@
+.backspace {
+	position: absolute;
+}
+
+.location {
+	border: 1px solid gray;
+	padding: 10px;
+}
+
+.location-cards {
+	display: flex;
+	flex-direction: row;
+}
+
+.card {
+	display: flex;
+	flex-direction: row;
+	margin: 10px;
+}
+
+.side {
+	border: 1px solid black;
+	width: 250px;
+	height: 350px;
+	border-radius: 10px;
+}
