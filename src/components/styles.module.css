@@ -1,8 +1,11 @@
 .backspace {
 	position: absolute;
+	width: 100%;
+	height: 100%;
 }
 
 .location {
+	position: absolute;
 	border: 1px solid gray;
 	padding: 10px;
 }
@@ -20,7 +23,5 @@
 
 .side {
 	border: 1px solid black;
-	width: 250px;
-	height: 350px;
 	border-radius: 10px;
 }
