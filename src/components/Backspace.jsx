@@ -4,102 +4,74 @@ import { useState, createContext } from "react";
 import styles from "./styles.module.css";
 
 import PropTypes from "prop-types";
+import Draggable from "react-draggable";
+import { useEffect } from "react";
 
 export const BackspaceContext = createContext();
 
-const Backspace = (props) => {
-	const { children, cardWidth, cardHeight } = props;
+const SCALE_STEP = 0.1;
+const TOP_LEFT_POSITION = { x: 0, y: 0 };
 
-	const ref = useRef();
+const Backspace = (props) => {
+	const { children, width, height } = props;
+
+	const mainRef = useRef();
+	const ctrlRef = useRef();
 
 	const [value, setValue] = useState({
-		offsetX: 0,
-		offsetY: 0,
 		scale: 1,
-		cardWidth,
-		cardHeight,
+		width,
+		height,
 	});
 
-	const [mouse, setMouse] = useState({
-		dragging: false,
-		startX: 0,
-		startY: 0,
-	});
+	const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-	const mouseMoveHandler = useCallback(
-		(e) => {
-			if (!mouse.dragging || !ref.current) {
-				return;
-			}
-
-			setValue((value) => ({
-				...value,
-				offsetX: Math.max(0, value.offsetX + e.clientX - mouse.startX),
-				offsetY: Math.max(0, value.offsetY + e.clientY - mouse.startY),
-			}));
-
-			setMouse((mouse) => ({
-				...mouse,
-				startX: e.clientX,
-				startY: e.clientY,
-			}));
-		},
-		[mouse.dragging, mouse.startX, mouse.startY]
+	const dragHandler = useCallback(
+		(e, data) =>
+			setOffset(({ x, y }) => ({
+				x: Math.max(0, x + data.deltaX),
+				y: Math.max(0, y + data.deltaY),
+			})),
+		[]
 	);
 
-	const mouseDownHandler = useCallback((e) => {
-		if (!ref.current) {
-			return;
-		}
+	const wheelHandler = useCallback((e, ...args) => {
+		e.preventDefault();
 
-		setMouse((mouse) => ({
-			...mouse,
-			dragging: e.target === ref.current,
-			startX: e.clientX,
-			startY: e.clientY,
-		}));
-	}, []);
-
-	const mouseUpHandler = useCallback((e) => {
-		if (!ref.current) {
-			return;
-		}
-
-		setMouse((mouse) => ({
-			...mouse,
-			dragging: false,
-		}));
-	}, []);
-
-	const mouseLeaveHandler = useCallback((e) => {
-		setMouse((mouse) => ({
-			...mouse,
-			dragging: false,
-		}));
-	}, []);
-
-	const wheelHandler = useCallback((e) => {
 		const dir = Math.sign(e.deltaY);
 
-		setValue((value) => ({
-			...value,
-			scale: Math.max(1, Math.min(20, value.scale * 10 + dir)) / 10,
+		setValue(({ scale, ...data }) => ({
+			...data,
+			scale: Math.max(0.1, Math.min(1, scale + dir * SCALE_STEP)),
 		}));
 	}, []);
 
+	useEffect(() => {
+		const { current } = ctrlRef;
+
+		if (current) {
+			current.addEventListener("wheel", wheelHandler);
+
+			return () => {
+				current.removeEventListener("wheel", wheelHandler);
+			};
+		}
+	}, [wheelHandler]);
+
 	return (
-		<BackspaceContext.Provider value={value}>
-			<div
-				ref={ref}
-				className={styles.backspace}
-				onMouseMove={mouseMoveHandler}
-				onMouseDown={mouseDownHandler}
-				onMouseUp={mouseUpHandler}
-				onMouseLeave={mouseLeaveHandler}
-				onWheel={wheelHandler}
+		<BackspaceContext.Provider value={{ ...value, ...offset }}>
+			<Draggable
+				position={TOP_LEFT_POSITION}
+				nodeRef={ctrlRef}
+				onDrag={dragHandler}
+				scale={1 / value.scale}
 			>
-				{children}
-			</div>
+				<div ref={ctrlRef} className={styles.backspace}></div>
+			</Draggable>
+
+			<Draggable positionOffset={offset} nodeRef={mainRef} disabled>
+				<div ref={mainRef}>{children}</div>
+			</Draggable>
 		</BackspaceContext.Provider>
 	);
 };
@@ -107,11 +79,11 @@ const Backspace = (props) => {
 export default Backspace;
 
 Backspace.propTypes = {
-	cardWidth: PropTypes.number.isRequired,
-	cardHeight: PropTypes.number.isRequired,
+	width: PropTypes.number.isRequired,
+	height: PropTypes.number.isRequired,
 };
 
 Backspace.defaultProps = {
-	cardWidth: 100,
-	cardHeight: 75,
+	width: 200,
+	height: 300,
 };
